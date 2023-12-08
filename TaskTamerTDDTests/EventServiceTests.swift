@@ -13,6 +13,7 @@ protocol EventStore {
     func connect() -> Bool
     func remove(_ event: Event) throws
     func event(withIdentifier identifier: String) -> Event?
+    func save(_ event: Event) throws
 }
 
 class MockEventStore: EventStore {
@@ -44,13 +45,17 @@ class MockEventStore: EventStore {
     func events(between startDate: Date, and endDate: Date) -> [Event] {
         scheduledEvents
     }
+    
+    func save(_ event: Event) throws {
+        scheduledEvents.append(event)
+    }
 }
 
 class EventService {
     let store: EventStore
     
     enum EventServiceError: Error {
-        case couldNotRemoveEvent, eventNotInDatabase
+        case couldNotRemoveEvent, eventNotInDatabase, couldNotSaveEvent
     }
     
     init(store: EventStore) {
@@ -69,17 +74,28 @@ class EventService {
         guard let event = store.event(withIdentifier: id) else {
             throw EventServiceError.eventNotInDatabase
         }
-        do {
-            try store.remove(event)
-        } catch {
-            throw EventServiceError.couldNotRemoveEvent
+        do { try store.remove(event)} 
+        catch { throw EventServiceError.couldNotRemoveEvent }
+    }
+    
+    func update(_ event: Event) throws -> Event {
+        guard let fetchedEvent = store.event(withIdentifier: event.id) else {
+            throw EventServiceError.eventNotInDatabase
         }
+        
+        do { try store.remove(fetchedEvent) }
+        catch { throw EventServiceError.couldNotRemoveEvent }
+        
+        do { try store.save(event) }
+        catch { throw EventServiceError.couldNotSaveEvent}
+        
+        return event
     }
 }
 
 struct Event: Identifiable, Equatable {
-    let startDate: Date
-    let endDate: Date
+    var startDate: Date
+    var endDate: Date
     let id = UUID().uuidString
 }
 
@@ -149,12 +165,24 @@ final class EventServiceTests: XCTestCase {
     func test_remove_throwsIfEventNotInDatabase() throws {
         let scheduledEvents = allScheduledEvents()
         let eventToRemove = Event(startDate: makeDate(hour: 8, minute: 0), endDate: makeDate(hour: 9, minute: 0))
-        let store = MockEventStore(scheduledEvents: scheduledEvents, willConnect: false)
+        let store = MockEventStore(scheduledEvents: scheduledEvents, willConnect: true)
         let sut = EventService(store: store)
         assertDoesThrow(test: {
             try sut.removeEvent(matching: eventToRemove.id)
         }, throws: .eventNotInDatabase)
     }
+    
+    func test_update_returnsUpdatedEventFromStoreOnSuccess() throws {
+        let scheduledEvents = allScheduledEvents()
+        var eventToReschedule = scheduledEvents[0]
+        let store = MockEventStore(scheduledEvents: scheduledEvents)
+
+        let sut = EventService(store: store)
+        eventToReschedule.startDate = makeDate(hour: 6, minute: 15)
+        eventToReschedule.endDate = makeDate(hour: 10, minute: 15)
+        let updatedEvent = try sut.update(eventToReschedule)
+        XCTAssertEqual(eventToReschedule, updatedEvent)
+     }
     
     // MARK: Helper Methods
     private func makeEvent(startDate: (hour: Int, minute: Int), endDate: (hour: Int, minute: Int)) -> Event {
