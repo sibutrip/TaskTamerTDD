@@ -50,7 +50,7 @@ class EventService {
     let store: EventStore
     
     enum EventServiceError: Error {
-        case noConnectionToStore, couldNotRemoveEvent
+        case couldNotRemoveEvent, eventNotInDatabase
     }
     
     init(store: EventStore) {
@@ -66,12 +66,13 @@ class EventService {
     }
     
     func removeEvent(matching id: Event.ID) throws {
-        if let event = store.event(withIdentifier: id) {
-            do {
-                try store.remove(event)
-            } catch {
-                throw EventServiceError.couldNotRemoveEvent
-            }
+        guard let event = store.event(withIdentifier: id) else {
+            throw EventServiceError.eventNotInDatabase
+        }
+        do {
+            try store.remove(event)
+        } catch {
+            throw EventServiceError.couldNotRemoveEvent
         }
     }
 }
@@ -138,12 +139,21 @@ final class EventServiceTests: XCTestCase {
         let originalScheduledEvents = allScheduledEvents()
         let eventToRemove = Event(startDate: makeDate(hour: 8, minute: 0), endDate: makeDate(hour: 9, minute: 0))
         let allScheduledEvents = originalScheduledEvents + [eventToRemove]
-        let idToDelete = eventToRemove.id
         let store = MockEventStore(scheduledEvents: allScheduledEvents, willConnect: false)
         let sut = EventService(store: store)
         assertDoesThrow(test: {
             try sut.removeEvent(matching: eventToRemove.id)
         }, throws: .couldNotRemoveEvent)
+    }
+    
+    func test_remove_throwsIfEventNotInDatabase() throws {
+        let scheduledEvents = allScheduledEvents()
+        let eventToRemove = Event(startDate: makeDate(hour: 8, minute: 0), endDate: makeDate(hour: 9, minute: 0))
+        let store = MockEventStore(scheduledEvents: scheduledEvents, willConnect: false)
+        let sut = EventService(store: store)
+        assertDoesThrow(test: {
+            try sut.removeEvent(matching: eventToRemove.id)
+        }, throws: .eventNotInDatabase)
     }
     
     // MARK: Helper Methods
