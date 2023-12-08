@@ -34,6 +34,7 @@
 		748706842B23A8AF0050D9A7 /* TaskTamerTDDTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = TaskTamerTDDTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		748706862B23A8AF0050D9A7 /* TaskTamerTDDTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TaskTamerTDDTests.swift; sourceTree = "<group>"; };
 		7487068D2B23A8C30050D9A7 /* EventServiceTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EventServiceTests.swift; sourceTree = "<group>"; };
+		7487068F2B23AD610050D9A7 /* TaskTamerTDD.xctestplan */ = {isa = PBXFileReference; lastKnownFileType = text; path = TaskTamerTDD.xctestplan; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -57,6 +58,7 @@
 		748706662B23A8A30050D9A7 = {
 			isa = PBXGroup;
 			children = (
+				7487068F2B23AD610050D9A7 /* TaskTamerTDD.xctestplan */,
 				748706712B23A8A30050D9A7 /* TaskTamerTDD */,
 				748706852B23A8AF0050D9A7 /* TaskTamerTDDTests */,
 				748706702B23A8A30050D9A7 /* Products */,

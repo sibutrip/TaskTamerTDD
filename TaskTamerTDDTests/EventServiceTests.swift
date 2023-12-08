@@ -17,8 +17,10 @@ protocol EventStore {
 
 class MockEventStore: EventStore {
     func remove(_ event: Event) throws {
-        scheduledEvents.removeAll { $0.id == event.id
+        if !willConnect {
+            throw NSError(domain: "no connection", code: 0)
         }
+        scheduledEvents.removeAll { $0.id == event.id }
     }
     
     func event(withIdentifier identifier: String) -> Event? {
@@ -47,19 +49,15 @@ class MockEventStore: EventStore {
 class EventService {
     let store: EventStore
     
-    enum Error: Swift.Error {
-        case noConnectionToStore
+    enum EventServiceError: Error {
+        case noConnectionToStore, couldNotRemoveEvent
     }
     
-    init(store: EventStore) throws{
-        if store.connect() {
-            self.store = store
-        } else {
-            throw Error.noConnectionToStore
-        }
+    init(store: EventStore) {
+        self.store = store
     }
     
-    func fetchDates(between startDate: Date, and endDate: Date) -> [Event] {
+    func fetchEvents(between startDate: Date, and endDate: Date) -> [Event] {
         let fetchedEvents = store.events(between: startDate, and: endDate)
         
         return fetchedEvents.filter {
@@ -67,74 +65,85 @@ class EventService {
         }
     }
     
-    func removeEvent(matching id: String) {
+    func removeEvent(matching id: Event.ID) throws {
         if let event = store.event(withIdentifier: id) {
-            try? store.remove(event)
+            do {
+                try store.remove(event)
+            } catch {
+                throw EventServiceError.couldNotRemoveEvent
+            }
         }
     }
 }
 
-struct Event: Equatable {
+struct Event: Identifiable, Equatable {
     let startDate: Date
     let endDate: Date
     let id = UUID().uuidString
 }
 
 final class EventServiceTests: XCTestCase {
+    typealias EventServiceError = EventService.EventServiceError
 
     func test_fetchEvents_returnsEmptyIfNoDatesScheduledInGivenRange() {
         let store = MockEventStore(scheduledEvents: [])
-        let sut = try! EventService(store: store)
+        let sut = EventService(store: store)
+        
         let startDate = makeDate(hour: 8, minute: 0)
         let endDate = makeDate(hour: 12, minute: 0)
+        let scheduledEvents = sut.fetchEvents(between: startDate, and: endDate)
         
-        let scheduledEvents = sut.fetchDates(between: startDate, and: endDate)
         XCTAssertEqual(scheduledEvents, [Event]())
     }
     
     func test_fetchEvents_returnsAllScheduledEventsIfAllEventsAreInTheGivenDateRange() {
         let allScheduledEvents = allScheduledEvents()
         let store = MockEventStore(scheduledEvents: allScheduledEvents)
-        let sut = try! EventService(store: store)
-    
+        let sut = EventService(store: store)
+        
         let startDate = makeDate(hour: 8, minute: 0)
         let endDate = makeDate(hour: 12, minute: 0)
+        let scheduledEvents = sut.fetchEvents(between: startDate, and: endDate)
         
-        let scheduledEvents = sut.fetchDates(between: startDate, and: endDate)
         XCTAssertEqual(scheduledEvents, allScheduledEvents)
     }
     
     func test_fetchEvents_returnsOnlyScheduledEventsInTheGivenDateRange() {
         let allScheduledEvents = allScheduledEvents()
         let store = MockEventStore(scheduledEvents: allScheduledEvents)
-        let sut = try! EventService(store: store)
-    
+        let sut = EventService(store: store)
+
         let startDate = makeDate(hour: 6, minute: 0)
         let endDate = makeDate(hour: 9, minute: 0)
+        let scheduledEvents = sut.fetchEvents(between: startDate, and: endDate)
         
-        let scheduledEvents = sut.fetchDates(between: startDate, and: endDate)
         XCTAssertEqual(scheduledEvents, [allScheduledEvents[0]])
     }
     
-    // TODO: How can I cover more edge cases with fetching events from different ranges?
-    
-    func test_fetchEvents_throwsNoConnectionToEventStoreErrorIfEventsAreNotAbleToBeFetched() {
-        let store = MockEventStore(scheduledEvents: [], willConnect: false)
-        XCTAssertThrowsError(try EventService(store: store))
-    }
-    
-    func test_remove_removesEventFromEventStoreMatchingGivenId() {
+    func test_remove_removesEventFromEventStoreMatchingGivenId() throws {
         let originalScheduledEvents = allScheduledEvents()
         let eventToRemove = Event(startDate: makeDate(hour: 8, minute: 0), endDate: makeDate(hour: 9, minute: 0))
         let allScheduledEvents = originalScheduledEvents + [eventToRemove]
         let idToDelete = eventToRemove.id
         let store = MockEventStore(scheduledEvents: allScheduledEvents)
-        let sut = try! EventService(store: store)
+        let sut = EventService(store: store)
 
-        sut.removeEvent(matching: idToDelete)
-        let allEventsAfterRemoval = sut.fetchDates(between: .distantPast, and: .distantFuture)
+        try sut.removeEvent(matching: idToDelete)
+        let allEventsAfterRemoval = sut.fetchEvents(between: .distantPast, and: .distantFuture)
         
         XCTAssertEqual(allEventsAfterRemoval, originalScheduledEvents)
+    }
+    
+    func test_remove_throwsIfCannotRemoveEvent() throws {
+        let originalScheduledEvents = allScheduledEvents()
+        let eventToRemove = Event(startDate: makeDate(hour: 8, minute: 0), endDate: makeDate(hour: 9, minute: 0))
+        let allScheduledEvents = originalScheduledEvents + [eventToRemove]
+        let idToDelete = eventToRemove.id
+        let store = MockEventStore(scheduledEvents: allScheduledEvents, willConnect: false)
+        let sut = EventService(store: store)
+        assertDoesThrow(test: {
+            try sut.removeEvent(matching: eventToRemove.id)
+        }, throws: .couldNotRemoveEvent)
     }
     
     // MARK: Helper Methods
@@ -143,6 +152,19 @@ final class EventServiceTests: XCTestCase {
             startDate: makeDate(hour: startDate.hour, minute: startDate.minute),
             endDate: makeDate(hour: endDate.hour, minute: endDate.minute)
         )
+    }
+    
+    private func assertDoesThrow(test action: () throws -> Void, throws expectedError: EventServiceError) {
+        do {
+            try action()
+        } catch let error as EventServiceError where error == expectedError {
+            XCTAssert(true)
+            return
+        } catch {
+            XCTFail("expected \(expectedError.localizedDescription) error and got \(error.localizedDescription)")
+            return
+        }
+        XCTFail("expected \(expectedError.localizedDescription) error but did not throw error")
     }
     
     private func makeDate(hour: Int, minute: Int) -> Date {

@@ -1,0 +1,28 @@
+{
+  "configurations" : [
+    {
+      "id" : "43F19A14-4FFC-488A-B7C1-BA35D0BC0754",
+      "name" : "Test Scheme Action",
+      "options" : {
+
+      }
+    }
+  ],
+  "defaultOptions" : {
+    "targetForVariableExpansion" : {
+      "containerPath" : "container:TaskTamerTDD.xcodeproj",
+      "identifier" : "7487066E2B23A8A30050D9A7",
+      "name" : "TaskTamerTDD"
+    }
+  },
+  "testTargets" : [
+    {
+      "target" : {
+        "containerPath" : "container:TaskTamerTDD.xcodeproj",
+        "identifier" : "748706832B23A8AF0050D9A7",
+        "name" : "TaskTamerTDDTests"
+      }
+    }
+  ],
+  "version" : 1
+}
