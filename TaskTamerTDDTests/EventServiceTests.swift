@@ -81,7 +81,7 @@ class EventService {
     @discardableResult
     func update(_ event: Event) throws -> Event {
         guard let fetchedEvent = store.event(withIdentifier: event.id) else {
-            throw EventServiceError.eventNotInDatabase
+            throw EventServiceError.couldNotUpdateEvent
         }
         
         do {
@@ -188,6 +188,19 @@ final class EventServiceTests: XCTestCase {
     func test_update_throwsCouldNotUpdateEventIfNoDatabaseConnection() throws {
         let scheduledEvents = allScheduledEvents()
         var eventToReschedule = scheduledEvents[0]
+        let store = MockEventStore(scheduledEvents: scheduledEvents, willConnect: false)
+
+        let sut = EventService(store: store)
+        eventToReschedule.startDate = makeDate(hour: 6, minute: 15)
+        eventToReschedule.endDate = makeDate(hour: 10, minute: 15)
+        assertDoesThrow(test: {
+            try sut.update(eventToReschedule)
+        }, throws: .couldNotUpdateEvent)
+     }
+    
+    func test_update_throwsCouldNotUpdateEventIfEventNotInDatabase() throws {
+        let scheduledEvents = allScheduledEvents()
+        var eventToReschedule = Event(startDate: Date(), endDate: Date())
         let store = MockEventStore(scheduledEvents: scheduledEvents, willConnect: false)
 
         let sut = EventService(store: store)
