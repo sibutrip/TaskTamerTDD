@@ -55,7 +55,7 @@ class EventService {
     let store: EventStore
     
     enum EventServiceError: Error {
-        case couldNotRemoveEvent, eventNotInDatabase, couldNotSaveEvent
+        case couldNotRemoveEvent, eventNotInDatabase, couldNotSaveEvent, couldNotUpdateEvent
     }
     
     init(store: EventStore) {
@@ -78,16 +78,17 @@ class EventService {
         catch { throw EventServiceError.couldNotRemoveEvent }
     }
     
+    @discardableResult
     func update(_ event: Event) throws -> Event {
         guard let fetchedEvent = store.event(withIdentifier: event.id) else {
             throw EventServiceError.eventNotInDatabase
         }
         
-        do { try store.remove(fetchedEvent) }
-        catch { throw EventServiceError.couldNotRemoveEvent }
-        
-        do { try store.save(event) }
-        catch { throw EventServiceError.couldNotSaveEvent}
+        do {
+            try store.remove(fetchedEvent)
+            try store.save(event)
+        }
+        catch { throw EventServiceError.couldNotUpdateEvent }
         
         return event
     }
@@ -182,6 +183,19 @@ final class EventServiceTests: XCTestCase {
         eventToReschedule.endDate = makeDate(hour: 10, minute: 15)
         let updatedEvent = try sut.update(eventToReschedule)
         XCTAssertEqual(eventToReschedule, updatedEvent)
+     }
+    
+    func test_update_throwsCouldNotUpdateEventIfNoDatabaseConnection() throws {
+        let scheduledEvents = allScheduledEvents()
+        var eventToReschedule = scheduledEvents[0]
+        let store = MockEventStore(scheduledEvents: scheduledEvents, willConnect: false)
+
+        let sut = EventService(store: store)
+        eventToReschedule.startDate = makeDate(hour: 6, minute: 15)
+        eventToReschedule.endDate = makeDate(hour: 10, minute: 15)
+        assertDoesThrow(test: {
+            try sut.update(eventToReschedule)
+        }, throws: .couldNotUpdateEvent)
      }
     
     // MARK: Helper Methods
