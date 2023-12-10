@@ -55,7 +55,7 @@ class EventService {
     let store: EventStore
     
     enum EventServiceError: Error {
-        case couldNotRemoveEvent, eventNotInDatabase, couldNotSaveEvent, couldNotUpdateEvent
+        case couldNotRemoveEvent, eventNotInDatabase, couldNotSaveEvent, couldNotUpdateEvent, scheduleIsBusyAtSelectedDate
     }
     
     init(store: EventStore) {
@@ -94,6 +94,10 @@ class EventService {
     }
     
     func schedule(_ event: Event) throws {
+        let existingEventsAtSelectedTime = fetchEvents(between: event.startDate, and: event.endDate)
+        if !existingEventsAtSelectedTime.isEmpty {
+            throw EventServiceError.scheduleIsBusyAtSelectedDate
+        }
         do {
             try store.save(event)
         } catch {
@@ -226,6 +230,15 @@ final class EventServiceTests: XCTestCase {
         try sut.schedule(event)
         let scheduledEvent = sut.fetchEvents(between: .distantPast, and: .distantFuture).first!
         XCTAssertEqual(scheduledEvent, event)
+    }
+    
+    func test_schedule_throwsIfOverlapsWithExistingEvent() {
+        let store = MockEventStore(scheduledEvents: allScheduledEvents())
+        let sut = EventService(store: store)
+        let event = Event(startDate: makeDate(hour: 8, minute: 45), endDate: makeDate(hour: 9, minute: 15))
+        assertDoesThrow(test: {
+            try sut.schedule(event)
+        }, throws: .scheduleIsBusyAtSelectedDate)
     }
     
     // MARK: Helper Methods
