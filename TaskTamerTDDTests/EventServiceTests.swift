@@ -9,6 +9,8 @@ import XCTest
 import EventKit
 
 protocol EventStore {
+    
+    /// to use with Event kit, use the predicateForEvents(withStart:end:calendars:) method to get a NSPredicate then query for events
     func events(between startDate: Date, and endDate: Date) -> [Event]
     func connect() -> Bool
     func remove(_ event: Event) throws
@@ -43,7 +45,9 @@ class MockEventStore: EventStore {
     }
     
     func events(between startDate: Date, and endDate: Date) -> [Event] {
-        scheduledEvents
+        return scheduledEvents.filter { event in
+            event.startDate > startDate && event.startDate < endDate || event.endDate > startDate && event.endDate < endDate
+        }
     }
     
     func save(_ event: Event) throws {
@@ -103,6 +107,25 @@ class EventService {
         } catch {
             throw EventServiceError.couldNotSaveEvent
         }
+    }
+    
+    func freeTimeBetween(startDate: Date, endDate: Date) -> [(start: Date, end: Date)] {
+        var currentFreeStartTime = startDate
+        let existingEvents = fetchEvents(between: startDate, and: endDate)
+            .sorted { $0.startDate < $1.startDate}
+        
+        var freeTimes = [(start: Date, end: Date)]()
+        existingEvents.forEach { existingEvent in
+            if currentFreeStartTime < existingEvent.startDate {
+                freeTimes.append((currentFreeStartTime, existingEvent.startDate))
+            }
+            currentFreeStartTime = max(currentFreeStartTime, existingEvent.endDate)
+        }
+        if currentFreeStartTime < endDate {
+            freeTimes.append((currentFreeStartTime, endDate))
+        }
+        
+        return freeTimes
     }
 }
 
@@ -239,6 +262,52 @@ final class EventServiceTests: XCTestCase {
         assertDoesThrow(test: {
             try sut.schedule(event)
         }, throws: .scheduleIsBusyAtSelectedDate)
+    }
+    
+    func test_freeTimeBetween_retreivesFreeTimeBetweenStartAndEndDates() {
+        let store = MockEventStore(scheduledEvents: allScheduledEvents())
+        let sut = EventService(store: store)
+        let startTime = makeDate(hour: 7, minute: 0)
+        let endTime = makeDate(hour: 10, minute: 30)
+        let freeTime = sut.freeTimeBetween(startDate: startTime, endDate: endTime)
+        let expectedFreeTime: [(start: Date, end: Date)] = [
+            (start: makeDate(hour: 7, minute: 0), end: makeDate(hour: 8, minute: 0)),
+            (start: makeDate(hour: 8, minute: 30), end: makeDate(hour: 9, minute: 0)),
+            (start: makeDate(hour: 9, minute: 15), end: makeDate(hour: 10, minute: 30))
+        ]
+        let formattedFreeTime = freeTime.flatMap { [$0.start, $0.end] }
+        let formattedExpectedFreeTime = expectedFreeTime.flatMap { [$0.start, $0.end] }
+        XCTAssertEqual(formattedFreeTime, formattedExpectedFreeTime)
+    }
+    
+    func test_freeTimeBetween_retreivesFreeTimeBetweenStartAndEndDatesIfEndDateIsBetweenFirstEventStartAndEndTime() {
+        let store = MockEventStore(scheduledEvents: allScheduledEvents())
+        let sut = EventService(store: store)
+        let startTime = makeDate(hour: 8, minute: 15)
+        let endTime = makeDate(hour: 10, minute: 30)
+        let freeTime = sut.freeTimeBetween(startDate: startTime, endDate: endTime)
+        let expectedFreeTime: [(start: Date, end: Date)] = [
+            (start: makeDate(hour: 8, minute: 30), end: makeDate(hour: 9, minute: 0)),
+            (start: makeDate(hour: 9, minute: 15), end: makeDate(hour: 10, minute: 30))
+        ]
+        let formattedFreeTime = freeTime.flatMap { [$0.start, $0.end] }
+        let formattedExpectedFreeTime = expectedFreeTime.flatMap { [$0.start, $0.end] }
+        XCTAssertEqual(formattedFreeTime, formattedExpectedFreeTime)
+    }
+    
+    func test_freeTimeBetween_retreivesFreeTimeBetweenStartAndEndDatesIfEndDateIsBetweenLastEventStartAndEndTime() {
+        let store = MockEventStore(scheduledEvents: allScheduledEvents())
+        let sut = EventService(store: store)
+        let startTime = makeDate(hour: 7, minute: 0)
+        let endTime = makeDate(hour: 9, minute: 10)
+        let freeTime = sut.freeTimeBetween(startDate: startTime, endDate: endTime)
+        let expectedFreeTime: [(start: Date, end: Date)] = [
+            (start: makeDate(hour: 7, minute: 0), end: makeDate(hour: 8, minute: 0)),
+            (start: makeDate(hour: 8, minute: 30), end: makeDate(hour: 9, minute: 0))
+        ]
+        let formattedFreeTime = freeTime.flatMap { [$0.start, $0.end] }
+        let formattedExpectedFreeTime = expectedFreeTime.flatMap { [$0.start, $0.end] }
+        XCTAssertEqual(formattedFreeTime, formattedExpectedFreeTime)
     }
     
     // MARK: Helper Methods
