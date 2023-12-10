@@ -37,7 +37,7 @@ class MockEventStore: EventStore {
     private var scheduledEvents: [Event]
     private var willConnect: Bool = true
     
-    init(scheduledEvents: [Event], willConnect: Bool = true) {
+    init(scheduledEvents: [Event] = [], willConnect: Bool = true) {
         self.scheduledEvents = scheduledEvents
         self.willConnect = willConnect
     }
@@ -91,6 +91,14 @@ class EventService {
         catch { throw EventServiceError.couldNotUpdateEvent }
         
         return event
+    }
+    
+    func schedule(_ event: Event) throws {
+        do {
+            try store.save(event)
+        } catch {
+            throw EventServiceError.couldNotSaveEvent
+        }
     }
 }
 
@@ -210,6 +218,15 @@ final class EventServiceTests: XCTestCase {
             try sut.update(eventToReschedule)
         }, throws: .couldNotUpdateEvent)
      }
+    
+    func test_schedule_addsEventToStoreIfCalendarIsFree() throws {
+        let store = MockEventStore()
+        let sut = EventService(store: store)
+        let event = Event(startDate: makeDate(hour: 9, minute: 0), endDate: makeDate(hour: 9, minute: 30))
+        try sut.schedule(event)
+        let scheduledEvent = sut.fetchEvents(between: .distantPast, and: .distantFuture).first!
+        XCTAssertEqual(scheduledEvent, event)
+    }
     
     // MARK: Helper Methods
     private func makeEvent(startDate: (hour: Int, minute: Int), endDate: (hour: Int, minute: Int)) -> Event {
