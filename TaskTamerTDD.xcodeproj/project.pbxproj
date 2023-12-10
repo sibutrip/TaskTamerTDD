@@ -13,6 +13,7 @@
 		7487067A2B23A8A40050D9A7 /* Preview Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 748706792B23A8A40050D9A7 /* Preview Assets.xcassets */; };
 		748706872B23A8AF0050D9A7 /* TaskTamerTDDTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 748706862B23A8AF0050D9A7 /* TaskTamerTDDTests.swift */; };
 		7487068E2B23A8C30050D9A7 /* EventServiceTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7487068D2B23A8C30050D9A7 /* EventServiceTests.swift */; };
+		74C7367B2B2625910085B2E6 /* TaskManagerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 74C7367A2B2625910085B2E6 /* TaskManagerTests.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -35,6 +36,7 @@
 		748706862B23A8AF0050D9A7 /* TaskTamerTDDTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TaskTamerTDDTests.swift; sourceTree = "<group>"; };
 		7487068D2B23A8C30050D9A7 /* EventServiceTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EventServiceTests.swift; sourceTree = "<group>"; };
 		7487068F2B23AD610050D9A7 /* TaskTamerTDD.xctestplan */ = {isa = PBXFileReference; lastKnownFileType = text; path = TaskTamerTDD.xctestplan; sourceTree = "<group>"; };
+		74C7367A2B2625910085B2E6 /* TaskManagerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TaskManagerTests.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -98,6 +100,7 @@
 			children = (
 				748706862B23A8AF0050D9A7 /* TaskTamerTDDTests.swift */,
 				7487068D2B23A8C30050D9A7 /* EventServiceTests.swift */,
+				74C7367A2B2625910085B2E6 /* TaskManagerTests.swift */,
 			);
 			path = TaskTamerTDDTests;
 			sourceTree = "<group>";
@@ -211,6 +214,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				74C7367B2B2625910085B2E6 /* TaskManagerTests.swift in Sources */,
 				7487068E2B23A8C30050D9A7 /* EventServiceTests.swift in Sources */,
 				748706872B23A8AF0050D9A7 /* TaskTamerTDDTests.swift in Sources */,
 			);
