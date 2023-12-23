@@ -9,10 +9,12 @@ import Foundation
 
 protocol EventStore {
     
+    // TODO: extend ekevent to have this functionality
     /// to use with Event kit, use the predicateForEvents(withStart:end:calendars:) method to get a NSPredicate then query for events
     func events(between startDate: Date, and endDate: Date) -> [Event]
     func connect() -> Bool
     func remove(_ event: Event) throws
     func event(withIdentifier identifier: String) -> Event?
     func save(_ event: Event) throws
+    var defaultCalendarForNewEvents: UserCalendar? { get }
 }

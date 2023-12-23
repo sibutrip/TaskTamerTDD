@@ -10,7 +10,10 @@
 		744515342B311B9D0091C4E8 /* EventService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 744515332B311B9D0091C4E8 /* EventService.swift */; };
 		744515362B311BBE0091C4E8 /* EventStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 744515352B311BBE0091C4E8 /* EventStore.swift */; };
 		744515382B311BD20091C4E8 /* MockEventStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 744515372B311BD20091C4E8 /* MockEventStore.swift */; };
-		7445153A2B311BE70091C4E8 /* Event.swift in Sources */ = {isa = PBXBuildFile; fileRef = 744515392B311BE70091C4E8 /* Event.swift */; };
+		7445153A2B311BE70091C4E8 /* TaskItem.swift in Sources */ = {isa = PBXBuildFile; fileRef = 744515392B311BE70091C4E8 /* TaskItem.swift */; };
+		7445153C2B311F140091C4E8 /* Event.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7445153B2B311F140091C4E8 /* Event.swift */; };
+		7445153E2B311F6C0091C4E8 /* Alarm.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7445153D2B311F6C0091C4E8 /* Alarm.swift */; };
+		744515402B3120040091C4E8 /* UserCalendar.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7445153F2B3120040091C4E8 /* UserCalendar.swift */; };
 		748706732B23A8A30050D9A7 /* TaskTamerTDDApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 748706722B23A8A30050D9A7 /* TaskTamerTDDApp.swift */; };
 		748706752B23A8A30050D9A7 /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 748706742B23A8A30050D9A7 /* ContentView.swift */; };
 		748706772B23A8A40050D9A7 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 748706762B23A8A40050D9A7 /* Assets.xcassets */; };
@@ -18,6 +21,7 @@
 		748706872B23A8AF0050D9A7 /* TaskTamerTDDTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 748706862B23A8AF0050D9A7 /* TaskTamerTDDTests.swift */; };
 		7487068E2B23A8C30050D9A7 /* EventServiceTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7487068D2B23A8C30050D9A7 /* EventServiceTests.swift */; };
 		74C7367B2B2625910085B2E6 /* TaskManagerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 74C7367A2B2625910085B2E6 /* TaskManagerTests.swift */; };
+		74F7B4792B377877003257A2 /* MockEvent.swift in Sources */ = {isa = PBXBuildFile; fileRef = 74F7B4782B377877003257A2 /* MockEvent.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -34,7 +38,10 @@
 		744515332B311B9D0091C4E8 /* EventService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EventService.swift; sourceTree = "<group>"; };
 		744515352B311BBE0091C4E8 /* EventStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EventStore.swift; sourceTree = "<group>"; };
 		744515372B311BD20091C4E8 /* MockEventStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MockEventStore.swift; sourceTree = "<group>"; };
-		744515392B311BE70091C4E8 /* Event.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Event.swift; sourceTree = "<group>"; };
+		744515392B311BE70091C4E8 /* TaskItem.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TaskItem.swift; sourceTree = "<group>"; };
+		7445153B2B311F140091C4E8 /* Event.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Event.swift; sourceTree = "<group>"; };
+		7445153D2B311F6C0091C4E8 /* Alarm.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Alarm.swift; sourceTree = "<group>"; };
+		7445153F2B3120040091C4E8 /* UserCalendar.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UserCalendar.swift; sourceTree = "<group>"; };
 		7487066F2B23A8A30050D9A7 /* TaskTamerTDD.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = TaskTamerTDD.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		748706722B23A8A30050D9A7 /* TaskTamerTDDApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TaskTamerTDDApp.swift; sourceTree = "<group>"; };
 		748706742B23A8A30050D9A7 /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
@@ -45,6 +52,7 @@
 		7487068D2B23A8C30050D9A7 /* EventServiceTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EventServiceTests.swift; sourceTree = "<group>"; };
 		7487068F2B23AD610050D9A7 /* TaskTamerTDD.xctestplan */ = {isa = PBXFileReference; lastKnownFileType = text; path = TaskTamerTDD.xctestplan; sourceTree = "<group>"; };
 		74C7367A2B2625910085B2E6 /* TaskManagerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TaskManagerTests.swift; sourceTree = "<group>"; };
+		74F7B4782B377877003257A2 /* MockEvent.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MockEvent.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -69,6 +77,9 @@
 			isa = PBXGroup;
 			children = (
 				744515352B311BBE0091C4E8 /* EventStore.swift */,
+				7445153B2B311F140091C4E8 /* Event.swift */,
+				7445153F2B3120040091C4E8 /* UserCalendar.swift */,
+				7445153D2B311F6C0091C4E8 /* Alarm.swift */,
 			);
 			path = Protocols;
 			sourceTree = "<group>";
@@ -76,7 +87,7 @@
 		744515322B311B8F0091C4E8 /* Models */ = {
 			isa = PBXGroup;
 			children = (
-				744515392B311BE70091C4E8 /* Event.swift */,
+				744515392B311BE70091C4E8 /* TaskItem.swift */,
 			);
 			path = Models;
 			sourceTree = "<group>";
@@ -127,8 +138,9 @@
 			children = (
 				748706862B23A8AF0050D9A7 /* TaskTamerTDDTests.swift */,
 				7487068D2B23A8C30050D9A7 /* EventServiceTests.swift */,
-				744515372B311BD20091C4E8 /* MockEventStore.swift */,
 				74C7367A2B2625910085B2E6 /* TaskManagerTests.swift */,
+				744515372B311BD20091C4E8 /* MockEventStore.swift */,
+				74F7B4782B377877003257A2 /* MockEvent.swift */,
 			);
 			path = TaskTamerTDDTests;
 			sourceTree = "<group>";
@@ -237,7 +249,10 @@
 				748706752B23A8A30050D9A7 /* ContentView.swift in Sources */,
 				744515362B311BBE0091C4E8 /* EventStore.swift in Sources */,
 				748706732B23A8A30050D9A7 /* TaskTamerTDDApp.swift in Sources */,
-				7445153A2B311BE70091C4E8 /* Event.swift in Sources */,
+				7445153C2B311F140091C4E8 /* Event.swift in Sources */,
+				7445153E2B311F6C0091C4E8 /* Alarm.swift in Sources */,
+				744515402B3120040091C4E8 /* UserCalendar.swift in Sources */,
+				7445153A2B311BE70091C4E8 /* TaskItem.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -249,6 +264,7 @@
 				74C7367B2B2625910085B2E6 /* TaskManagerTests.swift in Sources */,
 				7487068E2B23A8C30050D9A7 /* EventServiceTests.swift in Sources */,
 				748706872B23A8AF0050D9A7 /* TaskTamerTDDTests.swift in Sources */,
+				74F7B4792B377877003257A2 /* MockEvent.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

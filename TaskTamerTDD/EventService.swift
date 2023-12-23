@@ -7,7 +7,7 @@
 
 import Foundation
 
-class EventService {
+class EventService<EventType: Event> {
     let store: EventStore
     
     enum EventServiceError: Error {
@@ -18,44 +18,53 @@ class EventService {
         self.store = store
     }
     
-    func fetchEvents(between startDate: Date, and endDate: Date) -> [Event] {
+    //TODO: rename to fetch tasks
+    func fetchEvents(between startDate: Date, and endDate: Date) -> [TaskItem] {
         let fetchedEvents = store.events(between: startDate, and: endDate)
         
-        return fetchedEvents.filter {
+        let matchingEvents = fetchedEvents.filter {
             ($0.endDate > startDate && $0.endDate < endDate) || ($0.startDate < endDate && $0.startDate > startDate)
         }
+        return matchingEvents.map { TaskItem(fromEvent: $0) }
     }
     
-    func removeEvent(matching id: Event.ID) throws {
+    func removeEvent(matching id: TaskItem.ID) throws {
         guard let event = store.event(withIdentifier: id) else {
             throw EventServiceError.eventNotInDatabase
         }
-        do { try store.remove(event)}
+        do { try store.remove(event) }
         catch { throw EventServiceError.couldNotRemoveEvent }
     }
     
-    @discardableResult
-    func update(_ event: Event) throws -> Event {
-        guard let fetchedEvent = store.event(withIdentifier: event.id) else {
+    func update(_ task: TaskItem) throws -> TaskItem {
+        guard var fetchedEvent = store.event(withIdentifier: task.id) else {
             throw EventServiceError.couldNotUpdateEvent
         }
         
         do {
             try store.remove(fetchedEvent)
-            try store.save(event)
+            fetchedEvent.startDate = task.startDate
+            fetchedEvent.endDate = task.endDate
+            try store.save(fetchedEvent)
         }
         catch { throw EventServiceError.couldNotUpdateEvent }
         
-        return event
+        return TaskItem(fromEvent: fetchedEvent)
     }
     
-    func schedule(_ event: Event) throws {
-        let existingEventsAtSelectedTime = fetchEvents(between: event.startDate, and: event.endDate)
+    func schedule(_ task: TaskItem) throws -> TaskItem {
+        let existingEventsAtSelectedTime = fetchEvents(between: task.startDate, and: task.endDate)
         if !existingEventsAtSelectedTime.isEmpty {
             throw EventServiceError.scheduleIsBusyAtSelectedDate
         }
+        
+        var event = EventType()
+        event.startDate = task.startDate
+        event.endDate = task.endDate
+        
         do {
             try store.save(event)
+            return TaskItem(fromEvent: event)
         } catch {
             throw EventServiceError.couldNotSaveEvent
         }

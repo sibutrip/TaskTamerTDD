@@ -9,16 +9,20 @@ import Foundation
 @testable import TaskTamerTDD
 
 class MockEventStore: EventStore {
-    func remove(_ event: Event) throws {
+    typealias MockEvent = Event
+    
+    var defaultCalendarForNewEvents: UserCalendar?
+    
+    func remove(_ event: MockEvent) throws {
         if !willConnect {
             throw NSError(domain: "no connection", code: 0)
         }
-        scheduledEvents.removeAll { $0.id == event.id }
+        scheduledEvents.removeAll { $0.eventIdentifier == event.eventIdentifier }
     }
     
-    func event(withIdentifier identifier: String) -> Event? {
+    func event(withIdentifier identifier: String) -> MockEvent? {
         scheduledEvents.first { event in
-            event.id == identifier
+            event.eventIdentifier == identifier
         }
     }
     
@@ -26,21 +30,21 @@ class MockEventStore: EventStore {
         return willConnect
     }
     
-    private var scheduledEvents: [Event]
+    private var scheduledEvents: [MockEvent]
     private var willConnect: Bool = true
     
-    init(scheduledEvents: [Event] = [], willConnect: Bool = true) {
+    init(scheduledEvents: [MockEvent] = [], willConnect: Bool = true) {
         self.scheduledEvents = scheduledEvents
         self.willConnect = willConnect
     }
     
-    func events(between startDate: Date, and endDate: Date) -> [Event] {
+    func events(between startDate: Date, and endDate: Date) -> [MockEvent] {
         return scheduledEvents.filter { event in
             event.startDate > startDate && event.startDate < endDate || event.endDate > startDate && event.endDate < endDate
         }
     }
     
-    func save(_ event: Event) throws {
+    func save(_ event: MockEvent) throws {
         scheduledEvents.append(event)
     }
 }

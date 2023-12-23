@@ -6,76 +6,73 @@
 //
 
 import XCTest
-import EventKit
+@testable import TaskTamerTDD
 
 final class EventServiceTests: XCTestCase {
-    typealias EventServiceError = EventService.EventServiceError
+    typealias EventServiceError = EventService<MockEvent>.EventServiceError
 
     func test_fetchEvents_returnsEmptyIfNoDatesScheduledInGivenRange() {
-        let store = MockEventStore(scheduledEvents: [])
-        let sut = EventService(store: store)
+        let sut = makeSUT()
         
         let startDate = makeDate(hour: 8, minute: 0)
         let endDate = makeDate(hour: 12, minute: 0)
         let scheduledEvents = sut.fetchEvents(between: startDate, and: endDate)
         
-        XCTAssertEqual(scheduledEvents, [Event]())
+        XCTAssertEqual(scheduledEvents, [TaskItem]())
     }
     
     func test_fetchEvents_returnsAllScheduledEventsIfAllEventsAreInTheGivenDateRange() {
         let allScheduledEvents = allScheduledEvents()
-        let store = MockEventStore(scheduledEvents: allScheduledEvents)
-        let sut = EventService(store: store)
+        let sut = makeSUT(withEvents: allScheduledEvents)
         
         let startDate = makeDate(hour: 8, minute: 0)
         let endDate = makeDate(hour: 12, minute: 0)
-        let scheduledEvents = sut.fetchEvents(between: startDate, and: endDate)
-        
-        XCTAssertEqual(scheduledEvents, allScheduledEvents)
+        let scheduledTasks = sut.fetchEvents(between: startDate, and: endDate)
+        assertTasksAndEventsAreEqual(tasks: scheduledTasks, events: allScheduledEvents)
     }
     
     func test_fetchEvents_returnsOnlyScheduledEventsInTheGivenDateRange() {
         let allScheduledEvents = allScheduledEvents()
-        let store = MockEventStore(scheduledEvents: allScheduledEvents)
-        let sut = EventService(store: store)
+        let sut = makeSUT(withEvents: allScheduledEvents)
 
         let startDate = makeDate(hour: 6, minute: 0)
         let endDate = makeDate(hour: 9, minute: 0)
-        let scheduledEvents = sut.fetchEvents(between: startDate, and: endDate)
-        
-        XCTAssertEqual(scheduledEvents, [allScheduledEvents[0]])
+        let scheduledTasks = sut.fetchEvents(between: startDate, and: endDate)
+        assertTasksAndEventsAreEqual(tasks: scheduledTasks, events: [allScheduledEvents[0]])
     }
     
     func test_remove_removesEventFromEventStoreMatchingGivenId() throws {
         let originalScheduledEvents = allScheduledEvents()
-        let eventToRemove = Event(startDate: makeDate(hour: 8, minute: 0), endDate: makeDate(hour: 9, minute: 0))
+        let taskToRemove = TaskItem(startDate: makeDate(hour: 8, minute: 0), endDate: makeDate(hour: 9, minute: 0))
+        let eventToRemove = MockEvent()
+        eventToRemove.startDate = taskToRemove.startDate
+        eventToRemove.endDate = taskToRemove.endDate
         let allScheduledEvents = originalScheduledEvents + [eventToRemove]
-        let idToDelete = eventToRemove.id
-        let store = MockEventStore(scheduledEvents: allScheduledEvents)
-        let sut = EventService(store: store)
+        let idToDelete = eventToRemove.eventIdentifier!
+        let sut = makeSUT(withEvents: allScheduledEvents)
 
         try sut.removeEvent(matching: idToDelete)
-        let allEventsAfterRemoval = sut.fetchEvents(between: .distantPast, and: .distantFuture)
-        
-        XCTAssertEqual(allEventsAfterRemoval, originalScheduledEvents)
+        let allTasksAfterRemoval = sut.fetchEvents(between: .distantPast, and: .distantFuture)
+        assertTasksAndEventsAreEqual(tasks: allTasksAfterRemoval, events: originalScheduledEvents)
     }
     
     func test_remove_throwsIfCannotRemoveEvent() throws {
         let originalScheduledEvents = allScheduledEvents()
-        let eventToRemove = Event(startDate: makeDate(hour: 8, minute: 0), endDate: makeDate(hour: 9, minute: 0))
+        let eventToRemove = MockEvent()
+        eventToRemove.startDate = makeDate(hour: 8, minute: 0)
+        eventToRemove.endDate = makeDate(hour: 9, minute: 0)
+        let eventId = eventToRemove.eventIdentifier!
         let allScheduledEvents = originalScheduledEvents + [eventToRemove]
-        let store = MockEventStore(scheduledEvents: allScheduledEvents, willConnect: false)
-        let sut = EventService(store: store)
+        let sut = makeSUT(withEvents: allScheduledEvents, willConnect: false)
         assertDoesThrow(test: {
-            try sut.removeEvent(matching: eventToRemove.id)
+            try sut.removeEvent(matching: eventId)
         }, throws: .couldNotRemoveEvent)
     }
     
     func test_remove_throwsIfEventNotInDatabase() throws {
         let scheduledEvents = allScheduledEvents()
-        let eventToRemove = Event(startDate: makeDate(hour: 8, minute: 0), endDate: makeDate(hour: 9, minute: 0))
-        let store = MockEventStore(scheduledEvents: scheduledEvents, willConnect: true)
-        let sut = EventService(store: store)
+        let eventToRemove = TaskItem(startDate: makeDate(hour: 8, minute: 0), endDate: makeDate(hour: 9, minute: 0))
+        let sut = makeSUT(withEvents: scheduledEvents, willConnect: true)
         assertDoesThrow(test: {
             try sut.removeEvent(matching: eventToRemove.id)
         }, throws: .eventNotInDatabase)
@@ -83,63 +80,58 @@ final class EventServiceTests: XCTestCase {
     
     func test_update_returnsUpdatedEventFromStoreOnSuccess() throws {
         let scheduledEvents = allScheduledEvents()
-        var eventToReschedule = scheduledEvents[0]
-        let store = MockEventStore(scheduledEvents: scheduledEvents)
-
-        let sut = EventService(store: store)
+        let eventToReschedule = scheduledEvents[0]
+        let sut = makeSUT(withEvents: scheduledEvents)
         eventToReschedule.startDate = makeDate(hour: 6, minute: 15)
         eventToReschedule.endDate = makeDate(hour: 10, minute: 15)
-        let updatedEvent = try sut.update(eventToReschedule)
-        XCTAssertEqual(eventToReschedule, updatedEvent)
+        let taskToReschedule = TaskItem(fromEvent: eventToReschedule)
+        let updatedEvent = try sut.update(taskToReschedule)
+        XCTAssertEqual(taskToReschedule, updatedEvent)
      }
     
     func test_update_throwsCouldNotUpdateEventIfNoDatabaseConnection() throws {
         let scheduledEvents = allScheduledEvents()
-        var eventToReschedule = scheduledEvents[0]
-        let store = MockEventStore(scheduledEvents: scheduledEvents, willConnect: false)
+        let eventToReschedule = scheduledEvents[0]
 
-        let sut = EventService(store: store)
+        let sut = makeSUT(withEvents: scheduledEvents, willConnect: false)
         eventToReschedule.startDate = makeDate(hour: 6, minute: 15)
         eventToReschedule.endDate = makeDate(hour: 10, minute: 15)
+        let taskToReschedule = TaskItem(fromEvent: eventToReschedule)
         assertDoesThrow(test: {
-            try sut.update(eventToReschedule)
+            _ = try sut.update(taskToReschedule)
         }, throws: .couldNotUpdateEvent)
      }
     
     func test_update_throwsCouldNotUpdateEventIfEventNotInDatabase() throws {
         let scheduledEvents = allScheduledEvents()
-        var eventToReschedule = Event(startDate: Date(), endDate: Date())
-        let store = MockEventStore(scheduledEvents: scheduledEvents, willConnect: false)
+        var eventToReschedule = TaskItem(startDate: Date(), endDate: Date())
 
-        let sut = EventService(store: store)
+        let sut = makeSUT(withEvents: scheduledEvents, willConnect: false)
         eventToReschedule.startDate = makeDate(hour: 6, minute: 15)
         eventToReschedule.endDate = makeDate(hour: 10, minute: 15)
         assertDoesThrow(test: {
-            try sut.update(eventToReschedule)
+            _ = try sut.update(eventToReschedule)
         }, throws: .couldNotUpdateEvent)
      }
     
     func test_schedule_addsEventToStoreIfCalendarIsFree() throws {
-        let store = MockEventStore()
-        let sut = EventService(store: store)
-        let event = Event(startDate: makeDate(hour: 9, minute: 0), endDate: makeDate(hour: 9, minute: 30))
-        try sut.schedule(event)
-        let scheduledEvent = sut.fetchEvents(between: .distantPast, and: .distantFuture).first!
-        XCTAssertEqual(scheduledEvent, event)
+        let sut = makeSUT()
+        let event = TaskItem(startDate: makeDate(hour: 9, minute: 0), endDate: makeDate(hour: 9, minute: 30))
+        let scheduledEvent = try sut.schedule(event)
+        XCTAssertEqual(scheduledEvent.startDate, event.startDate)
+        XCTAssertEqual(scheduledEvent.endDate, event.endDate)
     }
     
     func test_schedule_throwsIfOverlapsWithExistingEvent() {
-        let store = MockEventStore(scheduledEvents: allScheduledEvents())
-        let sut = EventService(store: store)
-        let event = Event(startDate: makeDate(hour: 8, minute: 45), endDate: makeDate(hour: 9, minute: 15))
+        let sut = makeSUT(withEvents: allScheduledEvents())
+        let event = TaskItem(startDate: makeDate(hour: 8, minute: 45), endDate: makeDate(hour: 9, minute: 15))
         assertDoesThrow(test: {
-            try sut.schedule(event)
+            _ = try sut.schedule(event)
         }, throws: .scheduleIsBusyAtSelectedDate)
     }
     
     func test_freeTimeBetween_retreivesFreeTimeBetweenStartAndEndDates() {
-        let store = MockEventStore(scheduledEvents: allScheduledEvents())
-        let sut = EventService(store: store)
+        let sut = makeSUT(withEvents: allScheduledEvents())
         let startTime = makeDate(hour: 7, minute: 0)
         let endTime = makeDate(hour: 10, minute: 30)
         let freeTime = sut.freeTimeBetween(startDate: startTime, endDate: endTime)
@@ -154,8 +146,7 @@ final class EventServiceTests: XCTestCase {
     }
     
     func test_freeTimeBetween_retreivesFreeTimeBetweenStartAndEndDatesIfEndDateIsBetweenFirstEventStartAndEndTime() {
-        let store = MockEventStore(scheduledEvents: allScheduledEvents())
-        let sut = EventService(store: store)
+        let sut = makeSUT(withEvents: allScheduledEvents())
         let startTime = makeDate(hour: 8, minute: 15)
         let endTime = makeDate(hour: 10, minute: 30)
         let freeTime = sut.freeTimeBetween(startDate: startTime, endDate: endTime)
@@ -169,8 +160,7 @@ final class EventServiceTests: XCTestCase {
     }
     
     func test_freeTimeBetween_retreivesFreeTimeBetweenStartAndEndDatesIfEndDateIsBetweenLastEventStartAndEndTime() {
-        let store = MockEventStore(scheduledEvents: allScheduledEvents())
-        let sut = EventService(store: store)
+        let sut = makeSUT(withEvents: allScheduledEvents())
         let startTime = makeDate(hour: 7, minute: 0)
         let endTime = makeDate(hour: 9, minute: 10)
         let freeTime = sut.freeTimeBetween(startDate: startTime, endDate: endTime)
@@ -184,11 +174,15 @@ final class EventServiceTests: XCTestCase {
     }
     
     // MARK: Helper Methods
-    private func makeEvent(startDate: (hour: Int, minute: Int), endDate: (hour: Int, minute: Int)) -> Event {
-        Event(
-            startDate: makeDate(hour: startDate.hour, minute: startDate.minute),
-            endDate: makeDate(hour: endDate.hour, minute: endDate.minute)
-        )
+    private func makeSUT(withEvents events: [MockEvent] = [], willConnect: Bool = true) -> EventService<MockEvent> {
+        let store = MockEventStore(scheduledEvents: events, willConnect: willConnect)
+        return EventService<MockEvent>(store: store)
+    }
+    private func makeEvent(startDate: (hour: Int, minute: Int), endDate: (hour: Int, minute: Int)) -> MockEvent {
+        let event = MockEvent()
+        event.startDate = makeDate(hour: startDate.hour, minute: startDate.minute)
+        event.endDate = makeDate(hour: endDate.hour, minute: endDate.minute)
+        return event
     }
     
     private func assertDoesThrow(test action: () throws -> Void, throws expectedError: EventServiceError) {
@@ -208,7 +202,7 @@ final class EventServiceTests: XCTestCase {
         Calendar.autoupdatingCurrent.date(bySettingHour: hour, minute: minute, second: 0, of: Date())!
     }
     
-    private func allScheduledEvents() -> [Event] {
+    private func allScheduledEvents() -> [MockEvent] {
         let firstEvent = makeEvent(startDate: (hour: 8, minute: 0), endDate: (hour: 8, minute: 30))
         
         let secondEvent = makeEvent(startDate: (hour: 9, minute: 0), endDate: (hour: 9, minute: 15))
@@ -216,4 +210,20 @@ final class EventServiceTests: XCTestCase {
         
         return [firstEvent, secondEvent]
     }
+    
+    private func assertTasksAndEventsAreEqual(tasks: [TaskItem], events: [MockEvent]) {
+        let tasksFromEvents = events.map { TaskItem(fromEvent: $0) }
+        for task in tasks {
+            if !tasksFromEvents.contains(where: {$0 == task}) {
+                XCTFail("tasks and events are not equal")
+                return
+            }
+        }
+        XCTAssert(true)
+    }
+    
+//    private func assertTaskAndEventIsEqual(task: TaskItem, event: MockEvent) -> Bool {
+//        let taskFromEvent = TaskItem(fromEvent: event)
+//        return task == taskFromEvent
+//    }
 }
