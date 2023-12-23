@@ -9,16 +9,19 @@ import Foundation
 
 struct TaskItem: Identifiable, Equatable {
     let id: String
+    let title: String
     var startDate: Date
     var endDate: Date
     var sortStatus: SortStatus = .unsorted
-    init(startDate: Date, endDate: Date) {
+    init(title: String, startDate: Date, endDate: Date) {
         id = UUID().uuidString
+        self.title = title
         self.startDate = startDate
         self.endDate = endDate
     }
     init(fromEvent event: Event) {
         id = event.eventIdentifier
+        title = event.title
         startDate = event.startDate
         endDate = event.endDate
     }

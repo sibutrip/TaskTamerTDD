@@ -61,6 +61,7 @@ class EventService<EventType: Event> {
         var event = EventType()
         event.startDate = task.startDate
         event.endDate = task.endDate
+        event.title = task.title
         
         do {
             try store.save(event)
