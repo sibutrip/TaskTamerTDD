@@ -77,6 +77,7 @@ final class EventServiceTests: XCTestCase {
         let scheduledEvents = allScheduledEvents()
         let eventToRemove = TaskItem(title: "Test", startDate: makeDate(hour: 8, minute: 0), endDate: makeDate(hour: 9, minute: 0))
         let sut = makeSUT(withEvents: scheduledEvents, willConnect: true)
+        
         assertDoesThrow(test: {
             try sut.removeEvent(matching: eventToRemove.id)
         }, throws: .eventNotInDatabase)
@@ -86,21 +87,24 @@ final class EventServiceTests: XCTestCase {
         let scheduledEvents = allScheduledEvents()
         let eventToReschedule = scheduledEvents[0]
         let sut = makeSUT(withEvents: scheduledEvents)
+        
         eventToReschedule.startDate = makeDate(hour: 6, minute: 15)
         eventToReschedule.endDate = makeDate(hour: 10, minute: 15)
         let taskToReschedule = TaskItem(fromEvent: eventToReschedule)
         let updatedEvent = try sut.update(taskToReschedule)
+        
         XCTAssertEqual(taskToReschedule, updatedEvent)
      }
     
     func test_update_throwsCouldNotUpdateEventIfNoDatabaseConnection() throws {
         let scheduledEvents = allScheduledEvents()
-        let eventToReschedule = scheduledEvents[0]
-
         let sut = makeSUT(withEvents: scheduledEvents, willConnect: false)
+        
+        let eventToReschedule = scheduledEvents[0]
         eventToReschedule.startDate = makeDate(hour: 6, minute: 15)
         eventToReschedule.endDate = makeDate(hour: 10, minute: 15)
         let taskToReschedule = TaskItem(fromEvent: eventToReschedule)
+        
         assertDoesThrow(test: {
             _ = try sut.update(taskToReschedule)
         }, throws: .couldNotUpdateEvent)
@@ -108,11 +112,12 @@ final class EventServiceTests: XCTestCase {
     
     func test_update_throwsCouldNotUpdateEventIfEventNotInDatabase() throws {
         let scheduledEvents = allScheduledEvents()
-        var eventToReschedule = TaskItem(title: "Test", startDate: Date(), endDate: Date())
-
         let sut = makeSUT(withEvents: scheduledEvents, willConnect: false)
+        
+        var eventToReschedule = TaskItem(title: "Test", startDate: Date(), endDate: Date())
         eventToReschedule.startDate = makeDate(hour: 6, minute: 15)
         eventToReschedule.endDate = makeDate(hour: 10, minute: 15)
+        
         assertDoesThrow(test: {
             _ = try sut.update(eventToReschedule)
         }, throws: .couldNotUpdateEvent)
@@ -121,7 +126,9 @@ final class EventServiceTests: XCTestCase {
     func test_schedule_addsEventToStoreIfCalendarIsFree() throws {
         let sut = makeSUT()
         let event = TaskItem(title: "Test", startDate: makeDate(hour: 9, minute: 0), endDate: makeDate(hour: 9, minute: 30))
+        
         let scheduledEvent = try sut.schedule(event)
+        
         XCTAssertEqual(scheduledEvent.startDate, event.startDate)
         XCTAssertEqual(scheduledEvent.endDate, event.endDate)
     }
@@ -129,6 +136,7 @@ final class EventServiceTests: XCTestCase {
     func test_schedule_throwsIfOverlapsWithExistingEvent() {
         let sut = makeSUT(withEvents: allScheduledEvents())
         let event = TaskItem(title: "Test", startDate: makeDate(hour: 8, minute: 45), endDate: makeDate(hour: 9, minute: 15))
+        
         assertDoesThrow(test: {
             _ = try sut.schedule(event)
         }, throws: .scheduleIsBusyAtSelectedDate)
@@ -138,14 +146,17 @@ final class EventServiceTests: XCTestCase {
         let sut = makeSUT(withEvents: allScheduledEvents())
         let startTime = makeDate(hour: 7, minute: 0)
         let endTime = makeDate(hour: 10, minute: 30)
-        let freeTime = sut.freeTimeBetween(startDate: startTime, endDate: endTime)
         let expectedFreeTime: [(start: Date, end: Date)] = [
             (start: makeDate(hour: 7, minute: 0), end: makeDate(hour: 8, minute: 0)),
             (start: makeDate(hour: 8, minute: 30), end: makeDate(hour: 9, minute: 0)),
             (start: makeDate(hour: 9, minute: 15), end: makeDate(hour: 10, minute: 30))
         ]
+        
+        let freeTime = sut.freeTimeBetween(startDate: startTime, endDate: endTime)
+        
         let formattedFreeTime = freeTime.flatMap { [$0.start, $0.end] }
         let formattedExpectedFreeTime = expectedFreeTime.flatMap { [$0.start, $0.end] }
+        
         XCTAssertEqual(formattedFreeTime, formattedExpectedFreeTime)
     }
     
@@ -153,11 +164,13 @@ final class EventServiceTests: XCTestCase {
         let sut = makeSUT(withEvents: allScheduledEvents())
         let startTime = makeDate(hour: 8, minute: 15)
         let endTime = makeDate(hour: 10, minute: 30)
-        let freeTime = sut.freeTimeBetween(startDate: startTime, endDate: endTime)
         let expectedFreeTime: [(start: Date, end: Date)] = [
             (start: makeDate(hour: 8, minute: 30), end: makeDate(hour: 9, minute: 0)),
             (start: makeDate(hour: 9, minute: 15), end: makeDate(hour: 10, minute: 30))
         ]
+        
+        let freeTime = sut.freeTimeBetween(startDate: startTime, endDate: endTime)
+
         let formattedFreeTime = freeTime.flatMap { [$0.start, $0.end] }
         let formattedExpectedFreeTime = expectedFreeTime.flatMap { [$0.start, $0.end] }
         XCTAssertEqual(formattedFreeTime, formattedExpectedFreeTime)
@@ -167,11 +180,13 @@ final class EventServiceTests: XCTestCase {
         let sut = makeSUT(withEvents: allScheduledEvents())
         let startTime = makeDate(hour: 7, minute: 0)
         let endTime = makeDate(hour: 9, minute: 10)
-        let freeTime = sut.freeTimeBetween(startDate: startTime, endDate: endTime)
         let expectedFreeTime: [(start: Date, end: Date)] = [
             (start: makeDate(hour: 7, minute: 0), end: makeDate(hour: 8, minute: 0)),
             (start: makeDate(hour: 8, minute: 30), end: makeDate(hour: 9, minute: 0))
         ]
+        
+        let freeTime = sut.freeTimeBetween(startDate: startTime, endDate: endTime)
+
         let formattedFreeTime = freeTime.flatMap { [$0.start, $0.end] }
         let formattedExpectedFreeTime = expectedFreeTime.flatMap { [$0.start, $0.end] }
         XCTAssertEqual(formattedFreeTime, formattedExpectedFreeTime)
