@@ -28,6 +28,7 @@ final class EventServiceTests: XCTestCase {
         let startDate = makeDate(hour: 8, minute: 0)
         let endDate = makeDate(hour: 12, minute: 0)
         let scheduledTasks = sut.fetchEvents(between: startDate, and: endDate)
+        
         assertTasksAndEventsAreEqual(tasks: scheduledTasks, events: allScheduledEvents)
     }
     
@@ -38,6 +39,7 @@ final class EventServiceTests: XCTestCase {
         let startDate = makeDate(hour: 6, minute: 0)
         let endDate = makeDate(hour: 9, minute: 0)
         let scheduledTasks = sut.fetchEvents(between: startDate, and: endDate)
+        
         assertTasksAndEventsAreEqual(tasks: scheduledTasks, events: [allScheduledEvents[0]])
     }
     
@@ -53,10 +55,11 @@ final class EventServiceTests: XCTestCase {
 
         try sut.removeEvent(matching: idToDelete)
         let allTasksAfterRemoval = sut.fetchEvents(between: .distantPast, and: .distantFuture)
+        
         assertTasksAndEventsAreEqual(tasks: allTasksAfterRemoval, events: originalScheduledEvents)
     }
     
-    func test_remove_throwsIfCannotRemoveEvent() throws {
+    func test_remove_throwsCannotRemoveEventIfNoConnectionToAPI() throws {
         let originalScheduledEvents = allScheduledEvents()
         let eventToRemove = MockEvent()
         eventToRemove.startDate = makeDate(hour: 8, minute: 0)
@@ -64,6 +67,7 @@ final class EventServiceTests: XCTestCase {
         let eventId = eventToRemove.eventIdentifier!
         let allScheduledEvents = originalScheduledEvents + [eventToRemove]
         let sut = makeSUT(withEvents: allScheduledEvents, willConnect: false)
+        
         assertDoesThrow(test: {
             try sut.removeEvent(matching: eventId)
         }, throws: .couldNotRemoveEvent)
